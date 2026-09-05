@@ -1,0 +1,203 @@
+@{
+    var currentRoute = ViewContext.HttpContext.Request.Path.Value?.TrimEnd('/') ?? "";
+}
+<!DOCTYPE html>
+<html lang="zh-CN" class="">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SimpleMessageBroker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <script>
+        // Theme initialization - must run before render to avoid flash
+        (function() {
+            const stored = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (stored === 'dark' || (!stored && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex-shrink-0 flex flex-col">
+            <div class="p-5 border-b border-gray-200 dark:border-gray-700">
+                <h1 class="text-lg font-bold text-indigo-600 dark:text-indigo-400">SimpleMessageBroker</h1>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Management Console</p>
+            </div>
+            <nav class="flex-1 p-4 space-y-1">
+                <a href="/ui" class="flex items-center px-3 py-2 rounded-lg text-sm font-medium @(currentRoute == "/ui" || currentRoute == "" ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700")">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    Dashboard
+                </a>
+                <a href="/ui/topics" class="flex items-center px-3 py-2 rounded-lg text-sm font-medium @(currentRoute.StartsWith("/ui/topics") ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700")">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    Topics
+                </a>
+                <a href="/ui/messages" class="flex items-center px-3 py-2 rounded-lg text-sm font-medium @(currentRoute.StartsWith("/ui/messages") ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700")">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+                    Messages
+                </a>
+                <a href="/ui/consumer-groups" class="flex items-center px-3 py-2 rounded-lg text-sm font-medium @(currentRoute.StartsWith("/ui/consumer-groups") ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700")">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    Consumer Groups
+                </a>
+            </nav>
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                <a href="/swagger" target="_blank" class="flex items-center px-3 py-2 rounded-lg text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                    API Docs
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top bar -->
+            <header class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6">
+                <h2 class="text-lg font-semibold">@ViewData["Title"]</h2>
+                <div class="flex items-center gap-2">
+                    <button id="refresh-btn" class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Refresh">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    </button>
+                    <div class="h-5 w-px bg-gray-200 dark:bg-gray-700"></div>
+                    <div class="relative">
+                        <select id="auto-refresh" class="appearance-none pl-2 pr-6 py-1.5 rounded-lg text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer">
+                            <option value="0">Off</option>
+                            <option value="5">5s</option>
+                            <option value="10">10s</option>
+                            <option value="30">30s</option>
+                            <option value="60">1m</option>
+                        </select>
+                        <svg class="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <button id="theme-toggle" class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Toggle theme">
+                        <!-- Sun icon (shown in dark mode) -->
+                        <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                        <!-- Moon icon (shown in light mode) -->
+                        <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Page content -->
+            <main class="flex-1 overflow-y-auto p-6">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('theme-toggle').addEventListener('click', function() {
+            const html = document.documentElement;
+            const isDark = html.classList.contains('dark');
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'light' : 'dark');
+        });
+
+        // Auto-refresh
+        let refreshTimer = null;
+        let isRefreshing = false;
+        const refreshBtn = document.getElementById('refresh-btn');
+        const refreshSelect = document.getElementById('auto-refresh');
+
+        async function refreshPage() {
+            if (isRefreshing) return;
+            isRefreshing = true;
+            refreshBtn.classList.add('animate-spin', 'text-indigo-500');
+            try {
+                const res = await fetch(location.href);
+                const html = await res.text();
+                const mainMatch = html.match(/<main[^>]*>([\s\S]*?)<\/main>/);
+                if (mainMatch) {
+                    document.querySelector('main').innerHTML = mainMatch[1];
+                }
+                const titleMatch = html.match(/<title>([\s\S]*?)<\/title>/);
+                if (titleMatch) {
+                    document.title = titleMatch[1];
+                }
+            } catch (e) {
+                console.error('Refresh failed:', e);
+            } finally {
+                isRefreshing = false;
+                refreshBtn.classList.remove('animate-spin', 'text-indigo-500');
+            }
+        }
+
+        refreshBtn.addEventListener('click', refreshPage);
+
+        refreshSelect.addEventListener('change', function() {
+            const seconds = parseInt(this.value);
+            localStorage.setItem('auto-refresh', this.value);
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+                refreshTimer = null;
+            }
+            if (seconds > 0) {
+                refreshTimer = setInterval(refreshPage, seconds * 1000);
+            }
+        });
+
+        // Restore auto-refresh preference
+        const savedInterval = localStorage.getItem('auto-refresh');
+        if (savedInterval && savedInterval !== '0') {
+            refreshSelect.value = savedInterval;
+            const seconds = parseInt(savedInterval);
+            if (seconds > 0) {
+                refreshTimer = setInterval(refreshPage, seconds * 1000);
+            }
+        }
+
+        // Delete handlers (event delegation)
+        document.addEventListener('click', async function(e) {
+            const topicBtn = e.target.closest('[data-delete-topic]');
+            if (topicBtn) {
+                const name = topicBtn.dataset.deleteTopic;
+                if (!confirm(`Are you sure you want to delete topic "${name}"?\n\nThis will delete all messages, consumer offsets, and related consumers.\nThe topic will auto-recover if a producer or consumer uses it again.`)) return;
+                try {
+                    const res = await fetch(`/api/v1/admin/topics/${encodeURIComponent(name)}`, { method: 'DELETE' });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert(`Topic "${name}" deleted. Messages: ${data.data.deletedMessages}, Offsets: ${data.data.deletedConsumerOffsets}`);
+                        if (location.pathname.includes('/ui/topics/') && location.pathname !== '/ui/topics') {
+                            location.href = '/ui/topics';
+                        } else {
+                            refreshPage();
+                        }
+                    } else {
+                        alert(`Failed: ${data.message}`);
+                    }
+                } catch (err) {
+                    alert(`Error: ${err.message}`);
+                }
+                return;
+            }
+
+            const groupBtn = e.target.closest('[data-delete-group]');
+            if (groupBtn) {
+                const name = groupBtn.dataset.deleteGroup;
+                if (!confirm(`Are you sure you want to delete consumer group "${name}"?\n\nThis will delete all consumer offsets and consumers in this group.\nThe group will auto-recover when a consumer with this group name consumes again.`)) return;
+                try {
+                    const res = await fetch(`/api/v1/admin/consumer-groups/${encodeURIComponent(name)}`, { method: 'DELETE' });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert(`Consumer group "${name}" deleted. Offsets: ${data.data.deletedOffsets}, Consumers: ${data.data.deletedConsumers}`);
+                        refreshPage();
+                    } else {
+                        alert(`Failed: ${data.message}`);
+                    }
+                } catch (err) {
+                    alert(`Error: ${err.message}`);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

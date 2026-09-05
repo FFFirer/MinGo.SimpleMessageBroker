@@ -21,7 +21,7 @@
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30 flex items-center justify-between">
                 <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">@group.ConsumerGroup</h3>
-                <button onclick="deleteGroup('@group.ConsumerGroup')" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer">
+                <button data-delete-group="@group.ConsumerGroup" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer">
                     Delete
                 </button>
             </div>
@@ -112,20 +112,3 @@
     }
 }
 
-<script>
-async function deleteGroup(name) {
-    if (!confirm(`Are you sure you want to delete consumer group "${name}"?\n\nThis will delete all consumer offsets and consumers in this group.\nThe group will auto-recover when a consumer with this group name consumes again.`)) return;
-    try {
-        const res = await fetch(`/api/v1/admin/consumer-groups/${encodeURIComponent(name)}`, { method: 'DELETE' });
-        const data = await res.json();
-        if (data.success) {
-            alert(`Consumer group "${name}" deleted. Offsets: ${data.data.deletedOffsets}, Consumers: ${data.data.deletedConsumers}`);
-            location.reload();
-        } else {
-            alert(`Failed: ${data.message}`);
-        }
-    } catch (e) {
-        alert(`Error: ${e.message}`);
-    }
-}
-</script>

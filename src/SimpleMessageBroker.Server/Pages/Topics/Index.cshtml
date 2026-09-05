@@ -50,7 +50,7 @@
                         <td class="px-5 py-3 text-right text-sm tabular-nums whitespace-nowrap">@topic.ConsumerGroupCount</td>
                         <td class="px-5 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">@topic.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
                         <td class="px-5 py-3 text-center whitespace-nowrap">
-                            <button onclick="deleteTopic('@topic.Name')" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer">
+                            <button data-delete-topic="@topic.Name" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer">
                                 Delete
                             </button>
                         </td>
@@ -67,23 +67,6 @@
     </div>
 </div>
 
-<script>
-async function deleteTopic(name) {
-    if (!confirm(`Are you sure you want to delete topic "${name}"?\n\nThis will delete all messages, consumer offsets, and related consumers.\nThe topic will auto-recover if a producer or consumer uses it again.`)) return;
-    try {
-        const res = await fetch(`/api/v1/admin/topics/${encodeURIComponent(name)}`, { method: 'DELETE' });
-        const data = await res.json();
-        if (data.success) {
-            alert(`Topic "${name}" deleted. Messages: ${data.data.deletedMessages}, Offsets: ${data.data.deletedConsumerOffsets}`);
-            location.reload();
-        } else {
-            alert(`Failed: ${data.message}`);
-        }
-    } catch (e) {
-        alert(`Error: ${e.message}`);
-    }
-}
-</script>
 
 @functions {
     string FormatTtl(int seconds)
