@@ -78,9 +78,14 @@ public class MessageService : IMessageService
 
     public async Task<ConsumeResponse> ConsumeAsync(ConsumeRequest request)
     {
-        var topic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == request.Topic);
-        if (topic == null)
-            throw new InvalidOperationException($"Topic '{request.Topic}' not found");
+        // Auto-recover: create topic if it doesn't exist (self-recovery)
+        var topic = await GetOrCreateTopicAsync(request.Topic, null);
+
+        // Register or update consumer heartbeat
+        if (!string.IsNullOrEmpty(request.ConsumerId))
+        {
+            await RegisterConsumerAsync(request.ConsumerId, request.ConsumerGroup);
+        }
 
         // Get or initialize consumer offsets
         var offsets = await GetOrCreateConsumerOffsetsAsync(request.Topic, request.ConsumerGroup, topic.PartitionCount);
@@ -299,11 +304,116 @@ public class MessageService : IMessageService
         return newOffsets;
     }
 
+    private async Task RegisterConsumerAsync(string consumerId, string consumerGroup)
+    {
+        var consumer = await _context.Consumers.FindAsync(consumerId);
+        if (consumer != null)
+        {
+            consumer.LastHeartbeat = DateTime.UtcNow;
+        }
+        else
+        {
+            _context.Consumers.Add(new Models.Consumer
+            {
+                Id = consumerId,
+                ConsumerGroup = consumerGroup,
+                LastHeartbeat = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
     private static DateTime? CalculateExpiresAt(int? requestTtlSeconds, int defaultTtlSeconds)
     {
         var ttl = requestTtlSeconds ?? defaultTtlSeconds;
         // 0 or -1 means never expire
         if (ttl <= 0) return null;
         return DateTime.UtcNow.AddSeconds(ttl);
+    }
+
+    public async Task<DeleteTopicResponse> DeleteTopicAsync(string topicName)
+    {
+        var topic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == topicName);
+        if (topic == null)
+            throw new InvalidOperationException($"Topic '{topicName}' not found");
+
+        // Delete related messages
+        var messages = await _context.Messages
+            .Where(m => m.Topic == topicName)
+            .ToListAsync();
+        if (messages.Count > 0)
+            _context.Messages.RemoveRange(messages);
+
+        // Delete related consumer offsets
+        var offsets = await _context.ConsumerOffsets
+            .Where(o => o.Topic == topicName)
+            .ToListAsync();
+        if (offsets.Count > 0)
+            _context.ConsumerOffsets.RemoveRange(offsets);
+
+        // Delete consumers that only belonged to this topic's consumer groups
+        var affectedGroups = offsets.Select(o => o.ConsumerGroup).Distinct().ToList();
+        var consumers = await _context.Consumers
+            .Where(c => affectedGroups.Contains(c.ConsumerGroup))
+            .ToListAsync();
+        // Only delete consumers whose all groups are being removed
+        var remainingOffsets = await _context.ConsumerOffsets
+            .Where(o => affectedGroups.Contains(o.ConsumerGroup) && o.Topic != topicName)
+            .Select(o => o.ConsumerGroup)
+            .Distinct()
+            .ToListAsync();
+        var deletableGroups = affectedGroups.Except(remainingOffsets).ToHashSet();
+        var deletableConsumers = consumers.Where(c => deletableGroups.Contains(c.ConsumerGroup)).ToList();
+        if (deletableConsumers.Count > 0)
+            _context.Consumers.RemoveRange(deletableConsumers);
+
+        // Delete the topic itself
+        _context.Topics.Remove(topic);
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Topic deleted: {Topic}, messages: {Messages}, offsets: {Offsets}, consumers: {Consumers}",
+            topicName, messages.Count, offsets.Count, deletableConsumers.Count);
+
+        return new DeleteTopicResponse
+        {
+            Topic = topicName,
+            DeletedMessages = messages.Count,
+            DeletedConsumerOffsets = offsets.Count,
+            DeletedConsumers = deletableConsumers.Count
+        };
+    }
+
+    public async Task<DeleteConsumerGroupResponse> DeleteConsumerGroupAsync(string consumerGroup)
+    {
+        // Delete consumer offsets for this group
+        var offsets = await _context.ConsumerOffsets
+            .Where(o => o.ConsumerGroup == consumerGroup)
+            .ToListAsync();
+        if (offsets.Count > 0)
+            _context.ConsumerOffsets.RemoveRange(offsets);
+
+        // Delete consumers in this group
+        var consumers = await _context.Consumers
+            .Where(c => c.ConsumerGroup == consumerGroup)
+            .ToListAsync();
+        if (consumers.Count > 0)
+            _context.Consumers.RemoveRange(consumers);
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Consumer group deleted: {Group}, offsets: {Offsets}, consumers: {Consumers}",
+            consumerGroup, offsets.Count, consumers.Count);
+
+        return new DeleteConsumerGroupResponse
+        {
+            ConsumerGroup = consumerGroup,
+            DeletedOffsets = offsets.Count,
+            DeletedConsumers = consumers.Count
+        };
     }
 }

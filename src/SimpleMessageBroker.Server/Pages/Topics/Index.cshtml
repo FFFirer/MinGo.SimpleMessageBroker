@@ -1,0 +1,96 @@
+@page
+@using SimpleMessageBroker.Server.Services
+@inject IAdminQueryService AdminQuery
+@{
+    ViewData["Title"] = "Topics";
+    var topics = await AdminQuery.GetTopicsAsync();
+}
+
+<div class="space-y-5">
+    <div class="flex items-center justify-between">
+        <p class="text-sm text-gray-500 dark:text-gray-400">@topics.Count topic(s) found</p>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700/50">
+                <tr>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Name</th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
+                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Partitions</th>
+                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">TTL</th>
+                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Pending</th>
+                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Total</th>
+                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Groups</th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Created</th>
+                    <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                @foreach (var topic in topics)
+                {
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-5 py-3 whitespace-nowrap">
+                            <a href="/ui/topics/@Uri.EscapeDataString(topic.Name)" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">@topic.Name</a>
+                        </td>
+                        <td class="px-5 py-3 whitespace-nowrap">
+                            @if (topic.IsActive)
+                            {
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">Active</span>
+                            }
+                            else
+                            {
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">Inactive</span>
+                            }
+                        </td>
+                        <td class="px-5 py-3 text-right text-sm tabular-nums whitespace-nowrap">@topic.PartitionCount</td>
+                        <td class="px-5 py-3 text-right text-sm text-gray-500 dark:text-gray-400 tabular-nums whitespace-nowrap">@FormatTtl(topic.DefaultTtlSeconds)</td>
+                        <td class="px-5 py-3 text-right text-sm font-medium text-amber-600 dark:text-amber-400 tabular-nums whitespace-nowrap">@topic.PendingMessages.ToString("N0")</td>
+                        <td class="px-5 py-3 text-right text-sm tabular-nums whitespace-nowrap">@topic.TotalMessages.ToString("N0")</td>
+                        <td class="px-5 py-3 text-right text-sm tabular-nums whitespace-nowrap">@topic.ConsumerGroupCount</td>
+                        <td class="px-5 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">@topic.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td class="px-5 py-3 text-center whitespace-nowrap">
+                            <button onclick="deleteTopic('@topic.Name')" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (topics.Count == 0)
+        {
+            <div class="text-center py-12 text-gray-500 dark:text-gray-400">
+                <p>No topics found.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+async function deleteTopic(name) {
+    if (!confirm(`Are you sure you want to delete topic "${name}"?\n\nThis will delete all messages, consumer offsets, and related consumers.\nThe topic will auto-recover if a producer or consumer uses it again.`)) return;
+    try {
+        const res = await fetch(`/api/v1/admin/topics/${encodeURIComponent(name)}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            alert(`Topic "${name}" deleted. Messages: ${data.data.deletedMessages}, Offsets: ${data.data.deletedConsumerOffsets}`);
+            location.reload();
+        } else {
+            alert(`Failed: ${data.message}`);
+        }
+    } catch (e) {
+        alert(`Error: ${e.message}`);
+    }
+}
+</script>
+
+@functions {
+    string FormatTtl(int seconds)
+    {
+        if (seconds <= 0) return "Never";
+        if (seconds < 3600) return $"{seconds / 60}m";
+        if (seconds < 86400) return $"{seconds / 3600}h";
+        return $"{seconds / 86400}d";
+    }
+}
