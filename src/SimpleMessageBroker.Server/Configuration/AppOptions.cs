@@ -37,3 +37,10 @@ public class CorsOptions
     public string[] AllowedMethods { get; set; } = ["GET", "POST"];
     public string[] AllowedHeaders { get; set; } = ["Content-Type", "X-Api-Key", "X-Request-Id", "X-Client-Id"];
 }
+
+public class ApiDocOptions
+{
+    public const string SectionName = "ApiDoc";
+
+    public bool Enabled { get; set; }
+}

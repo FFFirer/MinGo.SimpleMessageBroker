@@ -72,9 +72,16 @@ builder.Services.AddCors(options =>
     });
 });
 
+// ApiDoc
+var apiDocOptions = new ApiDocOptions();
+builder.Configuration.GetSection(ApiDocOptions.SectionName).Bind(apiDocOptions);
+
 // Swagger
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+if (apiDocOptions.Enabled)
+{
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
+}
 
 var app = builder.Build();
 
@@ -88,11 +95,18 @@ using (var scope = app.Services.CreateScope())
 // Middleware pipeline
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
-if (app.Environment.IsDevelopment())
+if (apiDocOptions.Enabled)
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Pass ApiDoc visibility to Razor Pages
+app.Use(async (context, next) =>
+{
+    context.Items["ApiDocEnabled"] = apiDocOptions.Enabled;
+    await next();
+});
 
 app.UseCors();
 app.UseAuthorization();
