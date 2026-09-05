@@ -4,7 +4,7 @@ WORKDIR /src
 
 COPY . .
 RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
-    dotnet publish "SimpleMessageBroker.Server/SimpleMessageBroker.Server.csproj" \
+    dotnet publish "src/SimpleMessageBroker.Server/SimpleMessageBroker.Server.csproj" \
     -c "$BUILD_CONFIGURATION" -o /app/publish /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
