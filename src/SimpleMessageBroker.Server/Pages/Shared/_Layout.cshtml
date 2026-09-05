@@ -107,10 +107,30 @@
         let refreshTimer = null;
         let isRefreshing = false;
         const refreshBtn = document.getElementById('refresh-btn');
-        const refreshSelect = document.getElementById('auto-refresh');
+
+        function getAutoRefreshSeconds() {
+            return parseInt(localStorage.getItem('auto-refresh') || '0');
+        }
+
+        function getSelectElement() {
+            return document.getElementById('auto-refresh');
+        }
+
+        function syncSelectFromStorage() {
+            const sel = getSelectElement();
+            if (sel) {
+                const saved = localStorage.getItem('auto-refresh');
+                if (saved !== null) sel.value = saved;
+            }
+        }
 
         async function refreshPage() {
             if (isRefreshing) return;
+            // Guard: skip auto-refresh if user has turned it off
+            if (getAutoRefreshSeconds() <= 0) {
+                stopAutoRefresh();
+                return;
+            }
             isRefreshing = true;
             refreshBtn.classList.add('animate-spin', 'text-indigo-500');
             try {
@@ -124,12 +144,28 @@
                 if (titleMatch) {
                     document.title = titleMatch[1];
                 }
+                // Re-sync select value after content replacement
+                syncSelectFromStorage();
                 updateLastRefresh();
             } catch (e) {
                 console.error('Refresh failed:', e);
             } finally {
                 isRefreshing = false;
                 refreshBtn.classList.remove('animate-spin', 'text-indigo-500');
+            }
+        }
+
+        function stopAutoRefresh() {
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+                refreshTimer = null;
+            }
+        }
+
+        function startAutoRefresh(seconds) {
+            stopAutoRefresh();
+            if (seconds > 0) {
+                refreshTimer = setInterval(refreshPage, seconds * 1000);
             }
         }
 
@@ -145,25 +181,26 @@
 
         refreshBtn.addEventListener('click', refreshPage);
 
-        refreshSelect.addEventListener('change', function() {
-            const seconds = parseInt(this.value);
-            localStorage.setItem('auto-refresh', this.value);
-            if (refreshTimer) {
-                clearInterval(refreshTimer);
-                refreshTimer = null;
-            }
-            if (seconds > 0) {
-                refreshTimer = setInterval(refreshPage, seconds * 1000);
+        // Use event delegation for select change to avoid stale reference issues
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.id === 'auto-refresh') {
+                const seconds = parseInt(e.target.value);
+                localStorage.setItem('auto-refresh', e.target.value);
+                stopAutoRefresh();
+                if (seconds > 0) {
+                    startAutoRefresh(seconds);
+                }
             }
         });
 
         // Restore auto-refresh preference
         const savedInterval = localStorage.getItem('auto-refresh');
         if (savedInterval && savedInterval !== '0') {
-            refreshSelect.value = savedInterval;
+            const sel = getSelectElement();
+            if (sel) sel.value = savedInterval;
             const seconds = parseInt(savedInterval);
             if (seconds > 0) {
-                refreshTimer = setInterval(refreshPage, seconds * 1000);
+                startAutoRefresh(seconds);
             }
         }
 
