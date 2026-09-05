@@ -6,8 +6,8 @@ on:
       - "v*"
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/simple-message-broker
+  REGISTRY: ${{ vars.DOCKER_REGISTRY || 'ghcr.io' }}
+  IMAGE_NAME: ${{ vars.DOCKER_IMAGE_NAME || format('{0}/simple-message-broker', github.repository_owner) }}
 
 jobs:
   publish-docker:
@@ -19,12 +19,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to Docker registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME || github.actor }}
+          password: ${{ secrets.DOCKER_PASSWORD || secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata
         id: meta
