@@ -1,0 +1,22 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.rsuser
+*.DotSettings.user
+
+## IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+
+## OS
+Thumbs.db
+.DS_Store
+
+## Database
+*.db
+*.db-shm
+*.db-wal

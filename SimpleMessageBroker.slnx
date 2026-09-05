@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="SimpleMessageBroker.Client/SimpleMessageBroker.Client.csproj" />
+  <Project Path="SimpleMessageBroker.Server/SimpleMessageBroker.Server.csproj" />
+</Solution>
