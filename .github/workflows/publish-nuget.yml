@@ -1,0 +1,38 @@
+name: Publish NuGet
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish-nuget:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore dependencies
+        run: dotnet restore SimpleMessageBroker.Client/SimpleMessageBroker.Client.csproj
+
+      - name: Pack Client SDK
+        run: |
+          dotnet pack SimpleMessageBroker.Client/SimpleMessageBroker.Client.csproj \
+            --configuration Release \
+            -p:PackageVersion=${{ steps.version.outputs.VERSION }} \
+            -p:Version=${{ steps.version.outputs.VERSION }} \
+            -o ./artifacts
+
+      - name: Push to NuGet
+        run: |
+          dotnet nuget push ./artifacts/*.nupkg \
+            --api-key "${{ secrets.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate

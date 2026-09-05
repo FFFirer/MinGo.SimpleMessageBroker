@@ -4,6 +4,13 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <IsPackable>true</IsPackable>
+    <PackageId>SimpleMessageBroker.Client</PackageId>
+    <Description>C# Client SDK for SimpleMessageBroker — a lightweight single-node message queue middleware.</Description>
+    <Authors>MinGo</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/FFFirer/MinGo.SimpleMessageBroker</RepositoryUrl>
+    <PackageTags>message-queue;message-broker;sdk;messaging</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
