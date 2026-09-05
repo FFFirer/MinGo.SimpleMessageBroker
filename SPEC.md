@@ -1479,7 +1479,57 @@ curl http://localhost:5000/health
 
 ---
 
-## 附录 C：变更日志
+## 附录 C：管理 UI 规格
+
+### C.1 技术方案
+
+| 项目       | 选型                                    |
+| ---------- | --------------------------------------- |
+| 集成方式   | Razor Pages，集成在 Server 项目中       |
+| 路由前缀   | `/ui/`                                  |
+| CSS 框架   | Tailwind CSS v4 CDN                     |
+| 主题       | 明暗主题切换，跟随系统 + 手动切换       |
+| 数据访问   | 通过 `IAdminQueryService` 直接查询 DB   |
+
+### C.2 页面清单
+
+| 路由                          | 页面       | 功能                             |
+| ----------------------------- | ---------- | -------------------------------- |
+| `/ui` 或 `/ui/index`          | Dashboard  | 系统总览：Topic/消息/ConsumerGroup 统计 |
+| `/ui/topics`                  | Topics     | 所有 Topic 列表，含消息计数      |
+| `/ui/topics/{topic}`          | Topic 详情 | 分区深度、关联 Consumer Group     |
+| `/ui/messages?topic=xxx`      | 消息浏览   | 按 Topic 分页浏览消息            |
+| `/ui/consumer-groups`         | Consumer Groups | 所有消费组及 Offset 进度    |
+
+### C.3 后端查询服务
+
+`IAdminQueryService` 提供以下方法：
+
+```csharp
+public interface IAdminQueryService
+{
+    Task<DashboardStats> GetDashboardStatsAsync();
+    Task<List<TopicListItem>> GetTopicsAsync();
+    Task<TopicDetailInfo> GetTopicDetailAsync(string topicName);
+    Task<(List<MessageListItem> Messages, int Total)> GetMessagesAsync(string topic, int page, int pageSize, string? status);
+    Task<List<ConsumerGroupInfo>> GetConsumerGroupsAsync();
+}
+```
+
+### C.4 Tailwind CSS v4 CDN
+
+```html
+<script src="https://cdn.tailwindcss.com"></script>
+```
+
+明暗主题通过 `class` 策略：
+- `<html class="dark">` 切换暗色模式
+- Tailwind `dark:` 前缀定义暗色样式
+- JavaScript 读取 `localStorage` + `prefers-color-scheme` 初始化主题
+
+---
+
+## 附录 D：变更日志
 
 | 版本   | 日期       | 变更内容               |
 | ------ | ---------- | ---------------------- |

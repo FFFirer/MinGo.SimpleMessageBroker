@@ -1,0 +1,141 @@
+@page
+@using SimpleMessageBroker.Server.Services
+@inject IAdminQueryService AdminQuery
+@{
+    ViewData["Title"] = "Messages";
+    var topic = Request.Query["topic"].FirstOrDefault();
+    var status = Request.Query["status"].FirstOrDefault();
+    var pageStr = Request.Query["page"].FirstOrDefault() ?? "1";
+    int.TryParse(pageStr, out var currentPage);
+    if (currentPage < 1) currentPage = 1;
+    const int pageSize = 20;
+
+    var (messages, total) = await AdminQuery.GetMessagesAsync(topic, currentPage, pageSize, status);
+    var totalPages = (int)Math.Ceiling(total / (double)pageSize);
+    var topics = await AdminQuery.GetTopicsAsync();
+}
+
+<div class="space-y-5">
+    <!-- Filters -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+        <form method="get" class="flex flex-wrap items-end gap-4">
+            <div>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Topic</label>
+                <select name="topic" class="block w-48 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">All Topics</option>
+                    @foreach (var t in topics)
+                    {
+                        <option value="@t.Name" selected="@(t.Name == topic)">@t.Name</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Status</label>
+                <select name="status" class="block w-32 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="" selected="@(status == null)">All</option>
+                    <option value="pending" selected="@(status == "pending")">Pending</option>
+                    <option value="consumed" selected="@(status == "consumed")">Consumed</option>
+                    <option value="expired" selected="@(status == "expired")">Expired</option>
+                </select>
+            </div>
+            <button type="submit" class="px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+                Filter
+            </button>
+        </form>
+    </div>
+
+    <!-- Results info -->
+    <div class="flex items-center justify-between">
+        <p class="text-sm text-gray-500 dark:text-gray-400">@total.ToString("N0") message(s) found — Page @currentPage of @totalPages</p>
+    </div>
+
+    <!-- Messages Table -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700/50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">ID</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Topic</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Key</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Partition</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Consumer Group</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Size</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Created</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                @foreach (var msg in messages)
+                {
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-4 py-2.5 text-xs font-mono text-gray-600 dark:text-gray-400" title="@msg.Id">@msg.Id[..8]...</td>
+                        <td class="px-4 py-2.5 text-sm">
+                            <a href="/ui/messages?topic=@Uri.EscapeDataString(msg.Topic)" class="text-indigo-600 dark:text-indigo-400 hover:underline">@msg.Topic</a>
+                        </td>
+                        <td class="px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400 max-w-[150px] truncate" title="@msg.Key">@(msg.Key ?? "-")</td>
+                        <td class="px-4 py-2.5 text-sm text-center tabular-nums">@msg.Partition</td>
+                        <td class="px-4 py-2.5 text-center">
+                            @switch (msg.Status)
+                            {
+                                case "pending":
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">Pending</span>
+                                    break;
+                                case "consumed":
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">Consumed</span>
+                                    break;
+                                case "expired":
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400">Expired</span>
+                                    break;
+                            }
+                        </td>
+                        <td class="px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400">@(msg.ConsumerGroup ?? "-")</td>
+                        <td class="px-4 py-2.5 text-sm text-right tabular-nums text-gray-500 dark:text-gray-400">@FormatSize(msg.PayloadSize)</td>
+                        <td class="px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400">@msg.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (messages.Count == 0)
+        {
+            <div class="text-center py-12 text-gray-500 dark:text-gray-400">
+                <p>No messages found.</p>
+            </div>
+        }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1)
+    {
+        <div class="flex items-center justify-center gap-2">
+            @if (currentPage > 1)
+            {
+                <a href="?topic=@Uri.EscapeDataString(topic ?? "")&status=@(status ?? "")&page=@(currentPage-1)" class="px-3 py-1.5 rounded-lg text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Prev</a>
+            }
+            @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+            {
+                var pageNum = i;
+                if (pageNum == currentPage)
+                {
+                    <span class="px-3 py-1.5 rounded-lg text-sm bg-indigo-600 text-white">@pageNum</span>
+                }
+                else
+                {
+                    <a href="?topic=@Uri.EscapeDataString(topic ?? "")&status=@(status ?? "")&page=@pageNum" class="px-3 py-1.5 rounded-lg text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">@pageNum</a>
+                }
+            }
+            @if (currentPage < totalPages)
+            {
+                <a href="?topic=@Uri.EscapeDataString(topic ?? "")&status=@(status ?? "")&page=@(currentPage+1)" class="px-3 py-1.5 rounded-lg text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Next</a>
+            }
+        </div>
+    }
+</div>
+
+@functions {
+    string FormatSize(int bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        return $"{bytes / (1024.0 * 1024.0):F1} MB";
+    }
+}

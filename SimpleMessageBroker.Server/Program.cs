@@ -36,9 +36,19 @@ builder.Services.AddDbContext<MessageQueueContext>(options =>
 // Services
 builder.Services.AddScoped<IPartitionRouter, PartitionRouter>();
 builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<IAdminQueryService, AdminQueryService>();
 builder.Services.AddHostedService<CleanupService>();
 
-// Controllers
+// Controllers + Razor Pages
+builder.Services.AddRazorPages(options =>
+{
+    options.RootDirectory = "/Pages";
+    options.Conventions.AddPageRoute("/Index", "/ui");
+    options.Conventions.AddPageRoute("/Topics/Index", "/ui/topics");
+    options.Conventions.AddPageRoute("/Topics/Detail", "/ui/topics/{topicName}");
+    options.Conventions.AddPageRoute("/Messages/Index", "/ui/messages");
+    options.Conventions.AddPageRoute("/ConsumerGroups/Index", "/ui/consumer-groups");
+});
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -87,6 +97,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseAuthorization();
 app.MapControllers();
+app.MapRazorPages();
 app.MapHealthChecks("/health");
 
 app.Run();
