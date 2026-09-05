@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ${{ vars.DOCKER_REGISTRY || 'ghcr.io' }}
-  IMAGE_NAME: ${{ vars.DOCKER_IMAGE_NAME || format('{0}/simple-message-broker', github.repository_owner) }}
+  IMAGE_NAME: ${{ vars.DOCKER_IMAGE_NAME || 'mingo/simple-message-broker' }}
 
 jobs:
   publish-docker:

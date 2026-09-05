@@ -14,11 +14,5 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
-      - name: Restore dependencies
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --no-restore --configuration Release
-
-      - name: Build Docker image
-        run: docker build . -t simple-message-broker:ci-test
+      - name: Test
+        run: dotnet test -c Release
