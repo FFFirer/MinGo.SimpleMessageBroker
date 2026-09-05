@@ -26,7 +26,7 @@ jobs:
         run: dotnet restore src/SimpleMessageBroker.Client/SimpleMessageBroker.Client.csproj
 
       - name: NuGet login
-        uses: NuGet/setup-nuget@v1
+        uses: NuGet/login@v1
         id: login
         with:
           user: ${{ secrets.NUGET_USERNAME }}
