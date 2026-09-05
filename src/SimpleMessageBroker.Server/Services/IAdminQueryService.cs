@@ -79,12 +79,23 @@ public class MessageListItem
 public class ConsumerGroupInfo
 {
     public string ConsumerGroup { get; set; } = string.Empty;
+    public List<ConsumerInfo> Consumers { get; set; } = new();
     public List<ConsumerGroupTopicInfo> Topics { get; set; } = new();
+}
+
+public class ConsumerInfo
+{
+    public string ConsumerId { get; set; } = string.Empty;
+    public DateTime LastHeartbeat { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public bool IsAlive { get; set; }
+    public List<int> Partitions { get; set; } = new();
 }
 
 public class ConsumerGroupTopicInfo
 {
     public string Topic { get; set; } = string.Empty;
+    public int PartitionCount { get; set; }
     public List<ConsumerOffsetInfo> Offsets { get; set; } = new();
 }
 
@@ -93,4 +104,5 @@ public class ConsumerOffsetInfo
     public int Partition { get; set; }
     public long LastOffset { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public string? ConsumerId { get; set; }
 }

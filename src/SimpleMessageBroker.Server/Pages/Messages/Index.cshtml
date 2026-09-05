@@ -50,31 +50,36 @@
     </div>
 
     <!-- Messages Table -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-700/50">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">ID</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Topic</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Key</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Partition</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Status</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Consumer Group</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Size</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Created</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">ID</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">Topic</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">Key</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">Partition</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">Consumer Group</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">Size</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">Created</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                 @foreach (var msg in messages)
                 {
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                        <td class="px-4 py-2.5 text-xs font-mono text-gray-600 dark:text-gray-400" title="@msg.Id">@msg.Id[..8]...</td>
-                        <td class="px-4 py-2.5 text-sm">
+                        <td class="px-4 py-2.5 text-xs font-mono text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                            <span class="inline-flex items-center gap-1">
+                                <span title="@msg.Id">@msg.Id[..8]...</span>
+                                @await Html.PartialAsync("_CopyButton", msg.Id)
+                            </span>
+                        </td>
+                        <td class="px-4 py-2.5 text-sm whitespace-nowrap">
                             <a href="/ui/messages?topic=@Uri.EscapeDataString(msg.Topic)" class="text-indigo-600 dark:text-indigo-400 hover:underline">@msg.Topic</a>
                         </td>
-                        <td class="px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400 max-w-[150px] truncate" title="@msg.Key">@(msg.Key ?? "-")</td>
-                        <td class="px-4 py-2.5 text-sm text-center tabular-nums">@msg.Partition</td>
-                        <td class="px-4 py-2.5 text-center">
+                        <td class="px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap" title="@msg.Key">@(msg.Key ?? "-")</td>
+                        <td class="px-4 py-2.5 text-sm text-center tabular-nums whitespace-nowrap">@msg.Partition</td>
+                        <td class="px-4 py-2.5 text-center whitespace-nowrap">
                             @switch (msg.Status)
                             {
                                 case "pending":
@@ -88,9 +93,9 @@
                                     break;
                             }
                         </td>
-                        <td class="px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400">@(msg.ConsumerGroup ?? "-")</td>
-                        <td class="px-4 py-2.5 text-sm text-right tabular-nums text-gray-500 dark:text-gray-400">@FormatSize(msg.PayloadSize)</td>
-                        <td class="px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400">@msg.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td class="px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">@(msg.ConsumerGroup ?? "-")</td>
+                        <td class="px-4 py-2.5 text-sm text-right tabular-nums text-gray-500 dark:text-gray-400 whitespace-nowrap">@FormatSize(msg.PayloadSize)</td>
+                        <td class="px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">@msg.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
                     </tr>
                 }
             </tbody>

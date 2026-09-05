@@ -1,4 +1,7 @@
 <Solution>
-  <Project Path="SimpleMessageBroker.Client/SimpleMessageBroker.Client.csproj" />
-  <Project Path="SimpleMessageBroker.Server/SimpleMessageBroker.Server.csproj" />
+  <Project Path="src/SimpleMessageBroker.Server/SimpleMessageBroker.Server.csproj" />
+  <Project Path="src/SimpleMessageBroker.Client/SimpleMessageBroker.Client.csproj" />
+  <Project Path="samples/SimpleMessageBroker.Sample.Producer/SimpleMessageBroker.Sample.Producer.csproj" />
+  <Project Path="samples/SimpleMessageBroker.Sample.Consumer/SimpleMessageBroker.Sample.Consumer.csproj" />
+  <Project Path="tests/SimpleMessageBroker.Client.Tests/SimpleMessageBroker.Client.Tests.csproj" />
 </Solution>

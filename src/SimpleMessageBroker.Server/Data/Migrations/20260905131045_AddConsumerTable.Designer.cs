@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SimpleMessageBroker.Server.Data;
 
@@ -10,9 +11,11 @@ using SimpleMessageBroker.Server.Data;
 namespace SimpleMessageBroker.Server.Data.Migrations
 {
     [DbContext(typeof(MessageQueueContext))]
-    partial class MessageQueueContextModelSnapshot : ModelSnapshot
+    [Migration("20260905131045_AddConsumerTable")]
+    partial class AddConsumerTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.11");

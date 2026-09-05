@@ -13,6 +13,7 @@ public class MessageQueueContext : DbContext
     public DbSet<Message> Messages => Set<Message>();
     public DbSet<Topic> Topics => Set<Topic>();
     public DbSet<ConsumerOffset> ConsumerOffsets => Set<ConsumerOffset>();
+    public DbSet<Consumer> Consumers => Set<Consumer>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

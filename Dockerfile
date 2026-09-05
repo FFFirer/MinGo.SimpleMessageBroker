@@ -6,8 +6,8 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-COPY ["SimpleMessageBroker.Server/SimpleMessageBroker.Server.csproj", "SimpleMessageBroker.Server/"]
-COPY ["SimpleMessageBroker.Client/SimpleMessageBroker.Client.csproj", "SimpleMessageBroker.Client/"]
+COPY ["src/SimpleMessageBroker.Server/SimpleMessageBroker.Server.csproj", "SimpleMessageBroker.Server/"]
+COPY ["src/SimpleMessageBroker.Client/SimpleMessageBroker.Client.csproj", "SimpleMessageBroker.Client/"]
 RUN dotnet restore "SimpleMessageBroker.Server/SimpleMessageBroker.Server.csproj"
 
 COPY . .

@@ -173,22 +173,98 @@ public class AdminQueryService : IAdminQueryService
             .ThenBy(o => o.Partition)
             .ToListAsync();
 
+        // Pre-load topic partition counts
+        var topicNames = offsets.Select(o => o.Topic).Distinct().ToList();
+        var topicPartitions = await _context.Topics
+            .Where(t => topicNames.Contains(t.Name))
+            .ToDictionaryAsync(t => t.Name, t => t.PartitionCount);
+
+        // Load consumers for all groups
+        var groupNames = offsets.Select(o => o.ConsumerGroup).Distinct().ToList();
+        var consumers = await _context.Consumers
+            .Where(c => groupNames.Contains(c.ConsumerGroup))
+            .ToListAsync();
+
+        // Load last consumer per partition from Messages table
+        var partitionConsumers = await _context.Messages
+            .Where(m => !string.IsNullOrEmpty(m.ConsumerId) && m.IsConsumed)
+            .GroupBy(m => new { m.Topic, m.ConsumerGroup, m.Partition })
+            .Select(g => new
+            {
+                g.Key.Topic,
+                g.Key.ConsumerGroup,
+                g.Key.Partition,
+                ConsumerId = g.OrderByDescending(m => m.ConsumedAt).First().ConsumerId
+            })
+            .ToListAsync();
+
+        var partitionConsumerMap = partitionConsumers
+            .ToDictionary(
+                pc => (pc.Topic, pc.ConsumerGroup, pc.Partition),
+                pc => pc.ConsumerId);
+
+        var aliveThreshold = DateTime.UtcNow.AddMinutes(-5);
+
+        // Build a lookup of consumer heartbeat info by ID
+        var consumerHeartbeatMap = consumers
+            .ToDictionary(c => c.Id, c => new { c.LastHeartbeat, c.CreatedAt });
+
         return offsets
             .GroupBy(o => o.ConsumerGroup)
-            .Select(g => new ConsumerGroupInfo
+            .Select(g =>
             {
-                ConsumerGroup = g.Key,
-                Topics = g.GroupBy(o => o.Topic)
-                    .Select(tg => new ConsumerGroupTopicInfo
+                // Derive unique consumer IDs from partition data (Messages table)
+                var consumerIdsInPartitions = g
+                    .Select(o => partitionConsumerMap.GetValueOrDefault((o.Topic, o.ConsumerGroup, o.Partition)))
+                    .Where(id => id != null)
+                    .Distinct()
+                    .ToList();
+
+                // Build partition assignment per consumer
+                var consumerPartitions = new Dictionary<string, List<int>>();
+                foreach (var offset in g)
+                {
+                    var key = (offset.Topic, offset.ConsumerGroup, offset.Partition);
+                    if (partitionConsumerMap.TryGetValue(key, out var consumerId) && consumerId != null)
                     {
-                        Topic = tg.Key,
-                        Offsets = tg.Select(o => new ConsumerOffsetInfo
+                        if (!consumerPartitions.ContainsKey(consumerId))
+                            consumerPartitions[consumerId] = new List<int>();
+                        consumerPartitions[consumerId].Add(offset.Partition);
+                    }
+                }
+
+                // Build consumer infos from Messages-derived IDs, enriched with heartbeat data
+                var consumerInfos = consumerIdsInPartitions.Select(id =>
+                {
+                    var hasHeartbeat = consumerHeartbeatMap.TryGetValue(id!, out var hb);
+                    return new ConsumerInfo
+                    {
+                        ConsumerId = id!,
+                        LastHeartbeat = hasHeartbeat ? hb!.LastHeartbeat : DateTime.MinValue,
+                        CreatedAt = hasHeartbeat ? hb!.CreatedAt : DateTime.MinValue,
+                        IsAlive = hasHeartbeat && hb!.LastHeartbeat > aliveThreshold,
+                        Partitions = consumerPartitions.GetValueOrDefault(id!, new List<int>())
+                    };
+                }).OrderBy(c => c.ConsumerId).ToList();
+
+                return new ConsumerGroupInfo
+                {
+                    ConsumerGroup = g.Key,
+                    Consumers = consumerInfos,
+                    Topics = g.GroupBy(o => o.Topic)
+                        .Select(tg => new ConsumerGroupTopicInfo
                         {
-                            Partition = o.Partition,
-                            LastOffset = o.LastOffset,
-                            UpdatedAt = o.UpdatedAt
+                            Topic = tg.Key,
+                            PartitionCount = topicPartitions.GetValueOrDefault(tg.Key, tg.Select(o => o.Partition).Max() + 1),
+                            Offsets = tg.Select(o => new ConsumerOffsetInfo
+                            {
+                                Partition = o.Partition,
+                                LastOffset = o.LastOffset,
+                                UpdatedAt = o.UpdatedAt,
+                                ConsumerId = partitionConsumerMap.GetValueOrDefault((o.Topic, o.ConsumerGroup, o.Partition))
+                            }).ToList()
                         }).ToList()
-                    }).ToList()
+                };
             }).ToList();
     }
 }

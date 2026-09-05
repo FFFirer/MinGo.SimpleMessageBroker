@@ -67,6 +67,7 @@
                     <button id="refresh-btn" class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Refresh">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                     </button>
+                    <span id="last-refresh" class="text-xs text-gray-400 dark:text-gray-500 tabular-nums"></span>
                     <div class="h-5 w-px bg-gray-200 dark:bg-gray-700"></div>
                     <div class="relative">
                         <select id="auto-refresh" class="appearance-none pl-2 pr-6 py-1.5 rounded-lg text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer">
@@ -123,6 +124,7 @@
                 if (titleMatch) {
                     document.title = titleMatch[1];
                 }
+                updateLastRefresh();
             } catch (e) {
                 console.error('Refresh failed:', e);
             } finally {
@@ -130,6 +132,16 @@
                 refreshBtn.classList.remove('animate-spin', 'text-indigo-500');
             }
         }
+
+        function updateLastRefresh() {
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            const timeStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            document.getElementById('last-refresh').textContent = timeStr;
+        }
+
+        // Show initial load time
+        updateLastRefresh();
 
         refreshBtn.addEventListener('click', refreshPage);
 
@@ -154,6 +166,25 @@
                 refreshTimer = setInterval(refreshPage, seconds * 1000);
             }
         }
+
+        // Copy button handler (event delegation)
+        document.addEventListener('click', function(e) {
+            const copyBtn = e.target.closest('.copy-btn');
+            if (copyBtn) {
+                const text = copyBtn.dataset.copy;
+                if (text) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        copyBtn.querySelector('.copy-icon').classList.add('hidden');
+                        copyBtn.querySelector('.check-icon').classList.remove('hidden');
+                        setTimeout(() => {
+                            copyBtn.querySelector('.copy-icon').classList.remove('hidden');
+                            copyBtn.querySelector('.check-icon').classList.add('hidden');
+                        }, 1200);
+                    });
+                }
+                return;
+            }
+        });
 
         // Delete handlers (event delegation)
         document.addEventListener('click', async function(e) {

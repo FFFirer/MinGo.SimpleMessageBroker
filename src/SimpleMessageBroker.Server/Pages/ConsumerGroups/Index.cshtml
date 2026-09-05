@@ -38,6 +38,7 @@
                                 <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm @(consumer.IsAlive ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300" : "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300")">
                                     <span class="inline-block w-2 h-2 rounded-full @(consumer.IsAlive ? "bg-green-500" : "bg-red-500")"></span>
                                     <span class="font-mono text-xs" title="@consumer.ConsumerId">@consumer.ConsumerId</span>
+                                    @await Html.PartialAsync("_CopyButton", consumer.ConsumerId)
                                     @if (consumer.Partitions.Count > 0)
                                     {
                                         <span class="text-xs opacity-70">P[@string.Join(",", consumer.Partitions)]</span>
@@ -76,7 +77,8 @@
                                             <td class="px-3 py-1 text-gray-500 dark:text-gray-400 whitespace-nowrap">
                                                 @if (!string.IsNullOrEmpty(offset.ConsumerId))
                                                 {
-                                                    <span class="font-mono text-xs" title="@offset.ConsumerId">@TruncateId(offset.ConsumerId)</span>
+                                                    <span class="font-mono text-xs" title="@offset.ConsumerId">@offset.ConsumerId</span>
+                                                    @await Html.PartialAsync("_CopyButton", offset.ConsumerId)
                                                 }
                                                 else
                                                 {
@@ -106,9 +108,5 @@
         return $"{(int)diff.TotalDays}d ago";
     }
 
-    string TruncateId(string id)
-    {
-        return id.Length > 12 ? id[..12] + "…" : id;
-    }
 }
 
